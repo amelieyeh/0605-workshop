@@ -6,7 +6,6 @@
     "dev": "next dev -p 3939",
     "build": "next build",
     "start": "next start",
-    "db:up": "docker run -d --name deid-postgres -e POSTGRES_USER=deid -e POSTGRES_PASSWORD=deid -e POSTGRES_DB=deid -p 5433:5432 -v deid_pgdata:/var/lib/postgresql/data postgres:16",
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio"

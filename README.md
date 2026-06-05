@@ -11,13 +11,13 @@
 |---|---|
 | 全端框架 | Next.js 16 (App Router) + TypeScript |
 | ORM | Prisma 6 |
-| 資料庫 | PostgreSQL 16（Docker，對外 port `5433`） |
+| 資料庫 | SQLite（檔案 `prisma/dev.db`，零設定、免裝任何服務） |
 | 去識別化 | server 端 service（`lib/deidentify.ts`） |
 | 權限 | 角色切換 admin / viewer（v1 用前端下拉 mock，未做真登入） |
 
 ```
 瀏覽器 ──GET /api/members?role=viewer──▶ API route
-                                          │ 1. 從 Postgres 讀「原始」資料
+                                          │ 1. 從資料庫讀「原始」資料
                                           │ 2. deidentifyMember(member, role) 遮蔽
                                           ▼
 瀏覽器 ◀──── 只回「已遮蔽」的 JSON ───────┘
@@ -38,25 +38,25 @@ admin 角色則回傳完整原始資料。
 
 ## 啟動步驟
 
-```bash
-# 0. 安裝依賴
-npm install
+免裝 Docker、免裝資料庫服務，clone 下來四步就能跑：
 
-# 1. 啟動 Postgres（Docker）
-npm run db:up           # 等同 docker run ... postgres:16，對外 5433
+```bash
+# 1. 安裝依賴
+npm install
 
 # 2. 設定環境變數
 cp .env.example .env
 
-# 3. 建立資料表 + 灌假資料
-npm run db:migrate      # prisma migrate dev
-npm run db:seed         # 灌 5 筆假資料（格式正確、純屬虛構）
+# 3. 建立資料表 + 灌假資料（SQLite 檔會自動建在 prisma/dev.db）
+npm run db:migrate      # prisma migrate dev（會順帶執行 seed）
 
 # 4. 啟動開發伺服器
 npm run dev             # http://localhost:3939
 ```
 
-> dev server 用 `3939` 而非預設 3000，避免與本機其他服務衝突。
+> - 資料庫是 SQLite 單一檔案，第一次 `db:migrate` 會自動建檔並灌入 5 筆假資料。
+> - 若要重灌假資料：`npm run db:seed`。
+> - dev server 用 `3939` 而非預設 3000，避免與本機其他服務衝突。
 
 開啟 http://localhost:3939 ，用右上角下拉切換 **viewer / admin**，即可看到同一份資料在不同角色下的差異。
 
@@ -73,7 +73,7 @@ lib/
 prisma/
   schema.prisma         Member model
   seed.ts               假資料
-docker-compose.yml      Postgres 設定（若有裝 compose plugin 可用）
+  dev.db                SQLite 資料庫檔（gitignore，本機自動產生）
 ```
 
 ## 其他指令
