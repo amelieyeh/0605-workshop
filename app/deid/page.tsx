@@ -2,7 +2,7 @@
 
 import { useRef, useState, useMemo } from "react";
 import { UploadCloud, AlertCircle, Download, RotateCcw } from "lucide-react";
-import { parseCSV } from "@/lib/import/data";
+import { parseCSV, detectHeaderRow } from "@/lib/import/data";
 import * as XLSX from "xlsx";
 import { detectMaskType, maskRows, toCSV, MASK_TYPE_LABELS, type MaskType } from "@/lib/deid/masker";
 
@@ -26,9 +26,14 @@ function UploadZone({ onParsed }: {
           const wb = XLSX.read(e.target?.result, { type: "array" });
           const ws = wb.Sheets[wb.SheetNames[0]];
           const data = XLSX.utils.sheet_to_json<string[]>(ws, { header: 1, defval: "" });
-          if (!data.length) { setErr("看起來是空的 Excel"); return; }
-          headers = (data[0] as string[]).map(String);
-          rows = data.slice(1).map(r => (r as string[]).map(String));
+          // 去掉全空列，再偵測真正的表頭列（跳過橫幅／標題列）
+          const cleaned = data
+            .map(r => (r as string[]).map(String))
+            .filter(r => r.some(c => c.trim() !== ""));
+          if (!cleaned.length) { setErr("看起來是空的 Excel"); return; }
+          const hi = detectHeaderRow(cleaned);
+          headers = cleaned[hi].map(c => c.trim());
+          rows = cleaned.slice(hi + 1);
         } else {
           const p = parseCSV(String(e.target?.result ?? ""));
           headers = p.headers; rows = p.rows;

@@ -41,6 +41,29 @@ export const SAMPLE_CSV = `姓名,公司信箱,員工編號,部門,職稱,到職
 李宗翰,alex.chen@kaik.com,KK-1604,Engineering,前端工程師,not a date,wei.chang@kaik.com
 韓書宇,sophie.han@kaik.com,KK-1622,Operations,專案經理,2023-06-20,meiling.su@kaik.com`;
 
+/**
+ * 從前幾列中找出最可能的「表頭列」index。
+ * 橫幅／標題列（如合併儲存格的「2026/01-02」）通常只有少數欄有值，
+ * 真正的表頭是第一個「填滿」的列。回傳該列 index，找不到則回 0。
+ */
+export function detectHeaderRow(rows: string[][]): number {
+  const N = Math.min(rows.length, 15);
+  if (N === 0) return 0;
+  const nonEmpty = (r: string[]) =>
+    r.reduce((n, c) => n + ((c ?? "").trim() !== "" ? 1 : 0), 0);
+
+  let max = 0;
+  for (let i = 0; i < N; i++) max = Math.max(max, nonEmpty(rows[i]));
+  if (max <= 1) return 0; // 單欄資料，無從判斷，視第一列為表頭
+
+  // 第一個非空欄數達到最大值 60% 的列 = 表頭（橫幅列因欄數稀疏被跳過）
+  const threshold = Math.max(2, Math.ceil(max * 0.6));
+  for (let i = 0; i < N; i++) {
+    if (nonEmpty(rows[i]) >= threshold) return i;
+  }
+  return 0;
+}
+
 export function parseCSV(text: string): { headers: string[]; rows: string[][] } {
   const rows: string[][] = [];
   let row: string[] = [], field = "", inQ = false;
@@ -62,9 +85,10 @@ export function parseCSV(text: string): { headers: string[]; rows: string[][] } 
   if (field.length || row.length) { row.push(field); rows.push(row); }
   const cleaned = rows.filter(r => r.some(c => c.trim() !== ""));
   if (!cleaned.length) return { headers: [], rows: [] };
+  const h = detectHeaderRow(cleaned);
   return {
-    headers: cleaned[0].map(h => h.trim()),
-    rows: cleaned.slice(1).map(r => r.map(c => c.trim())),
+    headers: cleaned[h].map(c => c.trim()),
+    rows: cleaned.slice(h + 1).map(r => r.map(c => c.trim())),
   };
 }
 
