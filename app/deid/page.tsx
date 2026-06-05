@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useMemo, useEffect, useCallback } from "react";
-import { UploadCloud, AlertCircle, Download, RotateCcw, Eye, EyeOff } from "lucide-react";
+import { UploadCloud, AlertCircle, Download, RotateCcw } from "lucide-react";
 import { parseCSV } from "@/lib/import/data";
 import * as XLSX from "xlsx";
 import { detectMaskType, maskRows, toCSV, MASK_TYPE_LABELS, type MaskType } from "@/lib/deid/masker";
@@ -91,13 +91,12 @@ function UploadZone({ onParsed }: {
 
 // ── table ────────────────────────────────────────────────────────
 
-function DataTable({ headers, rows, checked, autoTypes, onToggle, showMasked }: {
+function DataTable({ headers, rows, checked, autoTypes, onToggle }: {
   headers: string[];
   rows: string[][];
   checked: Record<number, boolean>;
   autoTypes: Record<number, MaskType>;
   onToggle: (col: number) => void;
-  showMasked: boolean;
 }) {
   const activeMasks = useMemo(() => {
     const m: Record<number, MaskType> = {};
@@ -105,8 +104,8 @@ function DataTable({ headers, rows, checked, autoTypes, onToggle, showMasked }: 
     return m;
   }, [checked, autoTypes]);
 
-  const maskedRows = useMemo(() => maskRows(rows, activeMasks), [rows, activeMasks]);
-  const display = showMasked ? maskedRows : rows;
+  // 每欄各自決定遮蔽：勾選的欄套遮蔽，未勾選的原樣顯示
+  const display = useMemo(() => maskRows(rows, activeMasks), [rows, activeMasks]);
   const PREVIEW = 300;
 
   // sticky bottom scrollbar
@@ -179,7 +178,7 @@ function DataTable({ headers, rows, checked, autoTypes, onToggle, showMasked }: 
               <tr key={r} style={{ borderTop: "1px solid var(--border-subtle)" }}>
                 <td style={{ ...TD, color: "var(--fg-4)", fontFamily: "var(--font-mono)", fontSize: 11, textAlign: "center", width: 48 }}>{r + 1}</td>
                 {row.map((cell, c) => {
-                  const isMasked = showMasked && !!checked[c];
+                  const isMasked = !!checked[c];
                   return (
                     <td key={c} style={{ ...TD, color: isMasked ? "var(--accent)" : "var(--fg-2)", fontFamily: /KK-|@|\d{4}-/.test(cell) ? "var(--font-mono)" : "inherit" }}>
                       {cell !== "" ? cell : <span style={{ color: "var(--fg-4)" }}>—</span>}
@@ -221,7 +220,6 @@ export default function DeidPage() {
   const [parsed, setParsed] = useState<{ headers: string[]; rows: string[][]; name: string } | null>(null);
   const [checked, setChecked] = useState<Record<number, boolean>>({});
   const [autoTypes, setAutoTypes] = useState<Record<number, MaskType>>({});
-  const [showMasked, setShowMasked] = useState(false);
 
   const handleParsed = (headers: string[], rows: string[][], name: string) => {
     // default: all unchecked
@@ -235,7 +233,6 @@ export default function DeidPage() {
     setParsed({ headers, rows, name });
     setChecked(initChecked);
     setAutoTypes(initTypes);
-    setShowMasked(false);
   };
 
   const toggleCol = (col: number) => setChecked(m => ({ ...m, [col]: !m[col] }));
@@ -284,14 +281,6 @@ export default function DeidPage() {
         </div>
 
         <button
-          onClick={() => setShowMasked(v => !v)}
-          style={{ display: "flex", alignItems: "center", gap: 7, padding: "8px 14px", borderRadius: 8, border: "1px solid var(--border)", background: showMasked ? "var(--accent-subtle)" : "var(--surface)", color: showMasked ? "var(--accent)" : "var(--fg-2)", fontSize: 13, fontWeight: showMasked ? 600 : 400, cursor: "pointer", fontFamily: "inherit" }}
-        >
-          {showMasked ? <Eye size={15} /> : <EyeOff size={15} />}
-          {showMasked ? "看遮蔽後" : "看原始資料"}
-        </button>
-
-        <button
           onClick={handleDownload}
           disabled={activeCount === 0}
           style={{ display: "flex", alignItems: "center", gap: 7, padding: "8px 18px", borderRadius: 8, border: "none", background: activeCount > 0 ? "var(--accent)" : "var(--bg-inset)", color: activeCount > 0 ? "#fff" : "var(--fg-4)", fontSize: 13, fontWeight: 600, cursor: activeCount > 0 ? "pointer" : "not-allowed", fontFamily: "inherit" }}
@@ -301,7 +290,7 @@ export default function DeidPage() {
         </button>
 
         <button
-          onClick={() => { setParsed(null); setChecked({}); setAutoTypes({}); setShowMasked(false); }}
+          onClick={() => { setParsed(null); setChecked({}); setAutoTypes({}); }}
           style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--fg-3)", fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}
           title="重新上傳"
         >
@@ -312,7 +301,7 @@ export default function DeidPage() {
       {/* hint */}
       <div style={{ padding: "14px 24px 6px", maxWidth: 1400, margin: "0 auto" }}>
         <div style={{ fontSize: 13, color: "var(--fg-3)" }}>
-          勾選欄位標題下方的核取方塊即可套用遮蔽，切換右上角按鈕預覽效果。
+          勾選欄位標題下方的核取方塊即可套用遮蔽，預覽會即時反映；未勾選的欄位維持原始資料。
         </div>
       </div>
 
@@ -324,7 +313,6 @@ export default function DeidPage() {
           checked={checked}
           autoTypes={autoTypes}
           onToggle={toggleCol}
-          showMasked={showMasked}
         />
       </div>
     </div>
