@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useMemo } from "react";
+import { useRef, useState, useMemo, useEffect, useCallback } from "react";
 import { UploadCloud, AlertCircle, Download, RotateCcw, Eye, EyeOff } from "lucide-react";
 import { parseCSV } from "@/lib/import/data";
 import * as XLSX from "xlsx";
@@ -109,9 +109,43 @@ function DataTable({ headers, rows, checked, autoTypes, onToggle, showMasked }: 
   const display = showMasked ? maskedRows : rows;
   const PREVIEW = 300;
 
+  // sticky bottom scrollbar
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const fakeRef  = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
+  const syncing  = useRef(false);
+
+  // keep fake scrollbar width in sync with actual table width
+  useEffect(() => {
+    const update = () => {
+      if (innerRef.current && fakeRef.current)
+        fakeRef.current.style.width = innerRef.current.scrollWidth + "px";
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    if (innerRef.current) ro.observe(innerRef.current);
+    return () => ro.disconnect();
+  }, [headers, rows]);
+
+  const onTableScroll = useCallback(() => {
+    if (syncing.current || !scrollRef.current || !fakeRef.current?.parentElement) return;
+    syncing.current = true;
+    fakeRef.current.parentElement.scrollLeft = scrollRef.current.scrollLeft;
+    syncing.current = false;
+  }, []);
+
+  const onFakeScroll = useCallback(() => {
+    if (syncing.current || !scrollRef.current || !fakeRef.current?.parentElement) return;
+    syncing.current = true;
+    scrollRef.current.scrollLeft = fakeRef.current.parentElement.scrollLeft;
+    syncing.current = false;
+  }, []);
+
   return (
+    <>
     <div style={{ border: "1px solid var(--border)", borderRadius: 12, overflow: "hidden", background: "var(--surface)" }}>
-      <div style={{ overflowX: "auto" }}>
+      <div ref={scrollRef} onScroll={onTableScroll} style={{ overflowX: "auto" }} >
+        <div ref={innerRef}>
         <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 13 }}>
           <thead>
             <tr style={{ background: "var(--bg-subtle)" }}>
@@ -156,6 +190,7 @@ function DataTable({ headers, rows, checked, autoTypes, onToggle, showMasked }: 
             ))}
           </tbody>
         </table>
+        </div>{/* /innerRef */}
       </div>
       {rows.length > PREVIEW && (
         <div style={{ padding: "10px 16px", fontSize: 12, color: "var(--fg-4)", borderTop: "1px solid var(--border-subtle)", background: "var(--bg-subtle)" }}>
@@ -163,6 +198,17 @@ function DataTable({ headers, rows, checked, autoTypes, onToggle, showMasked }: 
         </div>
       )}
     </div>
+
+    {/* sticky bottom scrollbar */}
+    <div
+      onScroll={onFakeScroll}
+      style={{ position: "fixed", bottom: 0, left: 0, right: 0, overflowX: "auto", overflowY: "hidden", height: 14, zIndex: 50, background: "var(--bg-subtle)", borderTop: "1px solid var(--border)" }}
+    >
+      <div ref={fakeRef} style={{ height: 1 }} />
+    </div>
+    {/* bottom padding so table content isn't hidden behind fixed bar */}
+    <div style={{ height: 14 }} />
+    </>
   );
 }
 
