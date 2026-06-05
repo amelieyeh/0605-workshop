@@ -53,6 +53,38 @@
 }
 .lw-step-in { animation: lw-step-in 180ms var(--ease-out) both; }
 
+/* 自訂 checkbox：符合 Loopwise design token，不受 OS color-scheme 影響 */
+.deid-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  cursor: pointer;
+  display: inline-grid;
+  place-content: center;
+  transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+}
+.deid-checkbox::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  transform: scale(0);
+  transition: transform var(--dur-fast) var(--ease-out);
+  background: #fff;
+  clip-path: polygon(14% 44%, 0 65%, 43% 100%, 100% 16%, 84% 0, 39% 71%);
+}
+.deid-checkbox:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.deid-checkbox:checked::before { transform: scale(1); }
+.deid-checkbox:hover { border-color: var(--accent); }
+.deid-checkbox:focus-visible { outline: none; box-shadow: var(--ring-accent); }
+
 html {
   height: 100%;
 }

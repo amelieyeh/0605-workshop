@@ -126,9 +126,9 @@ function DataTable({ headers, rows, checked, autoTypes, onToggle }: {
                     <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", userSelect: "none" }}>
                       <input
                         type="checkbox"
+                        className="deid-checkbox"
                         checked={on}
                         onChange={() => onToggle(c)}
-                        style={{ width: 15, height: 15, accentColor: "var(--accent)", cursor: "pointer", flexShrink: 0 }}
                       />
                       <span style={{ fontSize: 11.5, color: on ? "var(--accent)" : "var(--fg-4)", fontWeight: on ? 600 : 400 }}>
                         {on ? `遮蔽（${hint}）` : "不遮蔽"}
