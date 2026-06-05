@@ -45,9 +45,14 @@ export default function Home() {
               切換角色看差異 —— viewer 模式下，原始個資永遠不會傳到瀏覽器。
             </p>
           </div>
-          <a href="/import" style={{ flexShrink: 0, marginTop: 4, padding: "10px 18px", borderRadius: 9, background: "#6C47FF", color: "#fff", fontSize: 13.5, fontWeight: 600, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 7 }}>
-            ＋ 批次匯入
-          </a>
+          <div style={{ display: "flex", gap: 8, flexShrink: 0, marginTop: 4 }}>
+            <a href="/deid" style={{ padding: "10px 18px", borderRadius: 9, background: "#6C47FF", color: "#fff", fontSize: 13.5, fontWeight: 600, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 7 }}>
+              去識別化工具
+            </a>
+            <a href="/import" style={{ padding: "10px 18px", borderRadius: 9, background: "transparent", border: "1px solid #C9CBD4", color: "#2E3038", fontSize: 13.5, fontWeight: 500, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 7 }}>
+              批次匯入
+            </a>
+          </div>
         </div>
       </header>
 
