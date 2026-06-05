@@ -85,6 +85,19 @@
 .deid-checkbox:hover { border-color: var(--accent); }
 .deid-checkbox:focus-visible { outline: none; box-shadow: var(--ring-accent); }
 
+/* 常駐捲軸：明確定義 ::-webkit-scrollbar 讓 macOS 不要用會自動隱藏的 overlay 捲軸，
+   橫捲軸因而固定顯示在捲動容器底部（= viewport 底） */
+.deid-scroll { scrollbar-width: thin; scrollbar-color: var(--border-strong) var(--bg-inset); }
+.deid-scroll::-webkit-scrollbar { width: 12px; height: 12px; }
+.deid-scroll::-webkit-scrollbar-track { background: var(--bg-inset); }
+.deid-scroll::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 999px;
+  border: 3px solid var(--bg-inset);
+}
+.deid-scroll::-webkit-scrollbar-thumb:hover { background: var(--ink-400); }
+.deid-scroll::-webkit-scrollbar-corner { background: var(--bg-inset); }
+
 html {
   height: 100%;
 }

@@ -116,8 +116,8 @@ function DataTable({ headers, rows, checked, autoTypes, onToggle }: {
   const PREVIEW = 300;
 
   return (
-    <div style={{ border: "1px solid var(--border)", borderRadius: 12, overflow: "hidden", background: "var(--surface)" }}>
-      <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 13 }}>
+    <div style={{ border: "1px solid var(--border)", borderRadius: 12, overflow: "hidden", background: "var(--surface)", width: "max-content", minWidth: "100%" }}>
+      <table style={{ borderCollapse: "collapse", width: "100%", minWidth: "max-content", fontSize: 13 }}>
         <thead>
           <tr>
             <th style={TH}>#</th>
@@ -270,7 +270,7 @@ export default function DeidPage() {
       </div>
 
       {/* table area — flex:1 fills remaining height; overflow:auto enables sticky header */}
-      <div style={{ flex: 1, overflow: "auto", padding: "6px 24px 0" }}>
+      <div className="deid-scroll" style={{ flex: 1, overflow: "auto", padding: "6px 24px 0" }}>
         <DataTable
           headers={parsed.headers}
           rows={parsed.rows}
