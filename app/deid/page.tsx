@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useMemo, useEffect, useCallback } from "react";
+import { useRef, useState, useMemo } from "react";
 import { UploadCloud, AlertCircle, Download, RotateCcw } from "lucide-react";
 import { parseCSV } from "@/lib/import/data";
 import * as XLSX from "xlsx";
@@ -90,6 +90,9 @@ function UploadZone({ onParsed }: {
 }
 
 // ── table ────────────────────────────────────────────────────────
+// Table lives inside a flex:1 overflow:auto container (set by parent),
+// so sticky <th top:0> works and the native scrollbar stays at the
+// exact bottom of the viewport at all times.
 
 function DataTable({ headers, rows, checked, autoTypes, onToggle }: {
   headers: string[];
@@ -104,114 +107,67 @@ function DataTable({ headers, rows, checked, autoTypes, onToggle }: {
     return m;
   }, [checked, autoTypes]);
 
-  // 每欄各自決定遮蔽：勾選的欄套遮蔽，未勾選的原樣顯示
   const display = useMemo(() => maskRows(rows, activeMasks), [rows, activeMasks]);
   const PREVIEW = 300;
 
-  // sticky bottom scrollbar
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const fakeRef  = useRef<HTMLDivElement>(null);
-  const innerRef = useRef<HTMLDivElement>(null);
-  const syncing  = useRef(false);
-
-  // keep fake scrollbar width in sync with actual table width
-  useEffect(() => {
-    const update = () => {
-      if (innerRef.current && fakeRef.current)
-        fakeRef.current.style.width = innerRef.current.scrollWidth + "px";
-    };
-    update();
-    const ro = new ResizeObserver(update);
-    if (innerRef.current) ro.observe(innerRef.current);
-    return () => ro.disconnect();
-  }, [headers, rows]);
-
-  const onTableScroll = useCallback(() => {
-    if (syncing.current || !scrollRef.current || !fakeRef.current?.parentElement) return;
-    syncing.current = true;
-    fakeRef.current.parentElement.scrollLeft = scrollRef.current.scrollLeft;
-    syncing.current = false;
-  }, []);
-
-  const onFakeScroll = useCallback(() => {
-    if (syncing.current || !scrollRef.current || !fakeRef.current?.parentElement) return;
-    syncing.current = true;
-    scrollRef.current.scrollLeft = fakeRef.current.parentElement.scrollLeft;
-    syncing.current = false;
-  }, []);
-
   return (
-    <>
     <div style={{ border: "1px solid var(--border)", borderRadius: 12, overflow: "hidden", background: "var(--surface)" }}>
-      <div ref={scrollRef} onScroll={onTableScroll} style={{ overflowX: "auto" }} >
-        <div ref={innerRef}>
-        <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 13 }}>
-          <thead>
-            <tr style={{ background: "var(--bg-subtle)" }}>
-              <th style={TH}>#</th>
-              {headers.map((h, c) => {
-                const on = !!checked[c];
-                const hint = autoTypes[c] ? MASK_TYPE_LABELS[autoTypes[c]] : "通用遮蔽";
-                return (
-                  <th key={c} style={{ ...TH, minWidth: 130 }}>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                      <span style={{ color: "var(--fg-2)", fontWeight: 500, fontSize: 12 }}>{h}</span>
-                      <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", userSelect: "none" }}>
-                        <input
-                          type="checkbox"
-                          checked={on}
-                          onChange={() => onToggle(c)}
-                          style={{ width: 15, height: 15, accentColor: "var(--accent)", cursor: "pointer", flexShrink: 0 }}
-                        />
-                        <span style={{ fontSize: 11.5, color: on ? "var(--accent)" : "var(--fg-4)", fontWeight: on ? 600 : 400 }}>
-                          {on ? `遮蔽（${hint}）` : "不遮蔽"}
-                        </span>
-                      </label>
-                    </div>
-                  </th>
-                );
-              })}
+      <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 13 }}>
+        <thead>
+          <tr>
+            <th style={TH}>#</th>
+            {headers.map((h, c) => {
+              const on = !!checked[c];
+              const hint = autoTypes[c] ? MASK_TYPE_LABELS[autoTypes[c]] : "通用遮蔽";
+              return (
+                <th key={c} style={{ ...TH, minWidth: 130 }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <span style={{ color: "var(--fg-2)", fontWeight: 500, fontSize: 12 }}>{h}</span>
+                    <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", userSelect: "none" }}>
+                      <input
+                        type="checkbox"
+                        checked={on}
+                        onChange={() => onToggle(c)}
+                        style={{ width: 15, height: 15, accentColor: "var(--accent)", cursor: "pointer", flexShrink: 0 }}
+                      />
+                      <span style={{ fontSize: 11.5, color: on ? "var(--accent)" : "var(--fg-4)", fontWeight: on ? 600 : 400 }}>
+                        {on ? `遮蔽（${hint}）` : "不遮蔽"}
+                      </span>
+                    </label>
+                  </div>
+                </th>
+              );
+            })}
+          </tr>
+        </thead>
+        <tbody>
+          {display.slice(0, PREVIEW).map((row, r) => (
+            <tr key={r} style={{ borderTop: "1px solid var(--border-subtle)" }}>
+              <td style={{ ...TD, color: "var(--fg-4)", fontFamily: "var(--font-mono)", fontSize: 11, textAlign: "center", width: 48 }}>{r + 1}</td>
+              {row.map((cell, c) => (
+                <td key={c} style={{ ...TD, color: checked[c] ? "var(--accent)" : "var(--fg-2)", fontFamily: /KK-|@|\d{4}-/.test(cell) ? "var(--font-mono)" : "inherit" }}>
+                  {cell !== "" ? cell : <span style={{ color: "var(--fg-4)" }}>—</span>}
+                </td>
+              ))}
             </tr>
-          </thead>
-          <tbody>
-            {display.slice(0, PREVIEW).map((row, r) => (
-              <tr key={r} style={{ borderTop: "1px solid var(--border-subtle)" }}>
-                <td style={{ ...TD, color: "var(--fg-4)", fontFamily: "var(--font-mono)", fontSize: 11, textAlign: "center", width: 48 }}>{r + 1}</td>
-                {row.map((cell, c) => {
-                  const isMasked = !!checked[c];
-                  return (
-                    <td key={c} style={{ ...TD, color: isMasked ? "var(--accent)" : "var(--fg-2)", fontFamily: /KK-|@|\d{4}-/.test(cell) ? "var(--font-mono)" : "inherit" }}>
-                      {cell !== "" ? cell : <span style={{ color: "var(--fg-4)" }}>—</span>}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        </div>{/* /innerRef */}
-      </div>
+          ))}
+        </tbody>
+      </table>
       {rows.length > PREVIEW && (
         <div style={{ padding: "10px 16px", fontSize: 12, color: "var(--fg-4)", borderTop: "1px solid var(--border-subtle)", background: "var(--bg-subtle)" }}>
           顯示前 {PREVIEW} 列，下載後包含全部 {rows.length} 列
         </div>
       )}
     </div>
-
-    {/* sticky bottom scrollbar */}
-    <div
-      onScroll={onFakeScroll}
-      style={{ position: "fixed", bottom: 0, left: 0, right: 0, overflowX: "auto", overflowY: "hidden", height: 14, zIndex: 50, background: "var(--bg-subtle)", borderTop: "1px solid var(--border)" }}
-    >
-      <div ref={fakeRef} style={{ height: 1 }} />
-    </div>
-    {/* bottom padding so table content isn't hidden behind fixed bar */}
-    <div style={{ height: 14 }} />
-    </>
   );
 }
 
-const TH: React.CSSProperties = { padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 500, color: "var(--fg-3)", borderBottom: "1px solid var(--border)", verticalAlign: "top" };
+// sticky + bg so rows don't bleed through when scrolling vertically
+const TH: React.CSSProperties = {
+  padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 500,
+  color: "var(--fg-3)", borderBottom: "1px solid var(--border)", verticalAlign: "top",
+  position: "sticky", top: 0, zIndex: 10, background: "var(--bg-subtle)",
+};
 const TD: React.CSSProperties = { padding: "9px 14px", verticalAlign: "middle", maxWidth: 240 };
 
 // ── page ─────────────────────────────────────────────────────────
@@ -222,7 +178,6 @@ export default function DeidPage() {
   const [autoTypes, setAutoTypes] = useState<Record<number, MaskType>>({});
 
   const handleParsed = (headers: string[], rows: string[][], name: string) => {
-    // default: all unchecked
     const initChecked: Record<number, boolean> = {};
     const initTypes: Record<number, MaskType> = {};
     headers.forEach((h, i) => {
@@ -236,7 +191,6 @@ export default function DeidPage() {
   };
 
   const toggleCol = (col: number) => setChecked(m => ({ ...m, [col]: !m[col] }));
-
   const activeCount = Object.values(checked).filter(Boolean).length;
 
   const handleDownload = () => {
@@ -265,9 +219,14 @@ export default function DeidPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg-subtle)", fontFamily: "var(--font-sans)" }}>
+    // height:100vh + flex-column + overflow:hidden makes the table area fill
+    // exactly the remaining screen space, so:
+    //   1. <th position:sticky top:0> works (scrolling is inside this container)
+    //   2. native horizontal scrollbar sits at the bottom of the viewport
+    <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: "var(--bg-subtle)", fontFamily: "var(--font-sans)", overflow: "hidden" }}>
+
       {/* top bar */}
-      <div style={{ position: "sticky", top: 0, zIndex: 40, background: "var(--surface)", borderBottom: "1px solid var(--border)", padding: "12px 24px", display: "flex", alignItems: "center", gap: 12 }}>
+      <div style={{ flexShrink: 0, background: "var(--surface)", borderBottom: "1px solid var(--border)", padding: "12px 24px", display: "flex", alignItems: "center", gap: 12 }}>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 15, fontWeight: 600, color: "var(--fg)" }}>資料去識別化</div>
           <div style={{ fontSize: 12.5, color: "var(--fg-3)", marginTop: 1 }}>
@@ -299,14 +258,14 @@ export default function DeidPage() {
       </div>
 
       {/* hint */}
-      <div style={{ padding: "14px 24px 6px", maxWidth: 1400, margin: "0 auto" }}>
+      <div style={{ flexShrink: 0, padding: "10px 24px 6px" }}>
         <div style={{ fontSize: 13, color: "var(--fg-3)" }}>
-          勾選欄位標題下方的核取方塊即可套用遮蔽，預覽會即時反映；未勾選的欄位維持原始資料。
+          勾選欄位標題下方的核取方塊即可套用遮蔽；未勾選的欄位維持原始資料。
         </div>
       </div>
 
-      {/* table */}
-      <div style={{ padding: "8px 24px 48px", maxWidth: 1400, margin: "0 auto" }}>
+      {/* table area — flex:1 fills remaining height; overflow:auto enables sticky header */}
+      <div style={{ flex: 1, overflow: "auto", padding: "6px 24px 0" }}>
         <DataTable
           headers={parsed.headers}
           rows={parsed.rows}
