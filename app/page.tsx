@@ -37,11 +37,18 @@ export default function Home() {
   return (
     <main className={styles.main}>
       <header className={styles.header}>
-        <h1 className={styles.title}>成員資料</h1>
-        <p className={styles.subtitle}>
-          原始資料完整存於資料庫，去識別化在後端讀取時依角色套用。
-          切換角色看差異 —— viewer 模式下，原始個資永遠不會傳到瀏覽器。
-        </p>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16 }}>
+          <div>
+            <h1 className={styles.title}>成員資料</h1>
+            <p className={styles.subtitle}>
+              原始資料完整存於資料庫，去識別化在後端讀取時依角色套用。
+              切換角色看差異 —— viewer 模式下，原始個資永遠不會傳到瀏覽器。
+            </p>
+          </div>
+          <a href="/import" style={{ flexShrink: 0, marginTop: 4, padding: "10px 18px", borderRadius: 9, background: "#6C47FF", color: "#fff", fontSize: 13.5, fontWeight: 600, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 7 }}>
+            ＋ 批次匯入
+          </a>
+        </div>
       </header>
 
       <div className={styles.toolbar}>
