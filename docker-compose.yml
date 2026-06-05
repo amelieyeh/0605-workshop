@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:16
+    container_name: deid-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: deid
+      POSTGRES_PASSWORD: deid
+      POSTGRES_DB: deid
+    ports:
+      - "5433:5432"
+    volumes:
+      - deid_pgdata:/var/lib/postgresql/data
+
+volumes:
+  deid_pgdata:

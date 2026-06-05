@@ -1,0 +1,22 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 成員 / 客戶名單 — 原始資料完整存於此，讀取時依角色去識別化
+model Member {
+  id        Int      @id @default(autoincrement())
+  name      String // 姓名
+  phone     String // 手機
+  email     String // Email
+  idNumber  String   @map("id_number") // 身分證字號
+  address   String // 地址
+  birthday  String // 生日 (YYYY-MM-DD)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("members")
+}
